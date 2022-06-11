@@ -63,10 +63,21 @@ void loop()
   //select(2);
   //colorWipe(selector.Color(100,0,0), 0, 1);
   bright_H();
-  //bright_off();
-  //delay(3000);
-  //bright_sector(6);
   delay(3000);
+  bright_playground();
+  delay(3000);
+  bright_all();
+  delay(3000);
+  bright_allsector();
+  delay(3000);
+  /*
+  for (int i = 0; i < 8; i++ ){
+    bright_sector(i);
+    delay(2000);
+    bright_off();
+  }
+  */
+  
 }
 
 /* ---- func ---- */
