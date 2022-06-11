@@ -36,6 +36,7 @@ void init_led();
 void init_sector();
 void led_main();
 void select(int n);
+void bright_off();
 
 // bright
 void bright_H();
@@ -59,9 +60,12 @@ void setup()
  
 void loop() 
 {
-  //select(0);
+  //select(2);
   //colorWipe(selector.Color(100,0,0), 0, 1);
-  //bright_H();
+  bright_H();
+  //bright_off();
+  //delay(3000);
+  //bright_sector(6);
   delay(3000);
 }
 
@@ -74,26 +78,24 @@ void init_led()
 
   for (int i = 0; i < 9; i++){
     pinMode(pin_num[i], OUTPUT);
-    select(i);
-    selector.begin();
-    selector.show();
   }
   // This initializes the NeoPixel library.
   
   pinMode(sw[0], INPUT);
   pinMode(sw[1], INPUT);
   pinMode(sw[2], INPUT);
+  bright_off();
 }
 
 void init_sector()
 {
     // init up & down
-    int width_start[4] = { 1, 6, 11, 16 };
-    int width_finish[4] = { 6, 11, 15, 20 };
+    int width_start[4] = { 0, 5, 10, 15 };
+    int width_finish[4] = { 6, 10, 15, 20 };
 
     // init left & right
-    int height_start[2] = { 1, 20 };
-    int height_finish[2] = { 8, 27 };
+    int height_start[2] = { 18, 1 };
+    int height_finish[2] = { 27, 8 };
 
     // init basis
     int led_line_i_hat[4] = { 0, 1, 2, 3 };
@@ -122,6 +124,13 @@ void select(int n)
   selector = Adafruit_NeoPixel(NUMPIXELS, pin_num[n], NEO_GRB + NEO_KHZ800);
   selector.begin();
   //selector.show();
+}
+void bright_off()
+{
+  for(int i = 0; i < 9; i++){
+    select(i);
+    colorWipe(selector.Color(0,0,0), 0, i);
+  }
 }
 
 void led_main()
@@ -169,17 +178,21 @@ void bright_H()
   colorWipe(selector.Color(100,0,0), 0, 2);
   
 }
-/*
+
 void bright_sector(int sector_num)
 {
   // up & down
-  colorWipeScope(p[s[sector_num].i_hat[0]].Color(0,100,0), 0, s[sector_num].i_hat[0], s[sector_num].width[0], s[sector_num].width[1]);
-  colorWipeScope(p[s[sector_num].i_hat[1]].Color(100,0,0), 0, s[sector_num].i_hat[1], s[sector_num].width[0], s[sector_num].width[1]);
+  select(s[sector_num].i_hat[0]);
+  colorWipeScope(selector.Color(0,0,100), 0, s[sector_num].i_hat[0], s[sector_num].width[0], s[sector_num].width[1]);
+  select(s[sector_num].i_hat[1]);
+  colorWipeScope(selector.Color(0,0,100), 0, s[sector_num].i_hat[1], s[sector_num].width[0], s[sector_num].width[1]);
   
 
   // left & right
-  colorWipeScope(p[s[sector_num].j_hat[0]].Color(100,0,0), 0, s[sector_num].j_hat[0], s[sector_num].height[0], s[sector_num].height[1]);
-  colorWipeScope(p[s[sector_num].j_hat[1]].Color(100,0,0), 0, s[sector_num].j_hat[1], s[sector_num].height[0], s[sector_num].height[1]);
+  select(s[sector_num].j_hat[0]);
+  colorWipeScope(selector.Color(0,0,100), 0, s[sector_num].j_hat[0], s[sector_num].height[0], s[sector_num].height[1]);
+  select(s[sector_num].j_hat[0]);
+  colorWipeScope(selector.Color(0,0,100), 0, s[sector_num].j_hat[1], s[sector_num].height[0], s[sector_num].height[1]);
 }
 void bright_allsector()
 {
@@ -190,9 +203,12 @@ void bright_allsector()
 
 void bright_all()
 {
-  colorWipe(p0.Color(0,0,100), 0, 0);
+  for(int i = 0; i < 9; i++){
+    select(i);
+    colorWipe(selector.Color(100,0,0), 0, i);
+  }
 }
-*/
+
 
 // color wipe
 
