@@ -24,16 +24,6 @@ Sector s[8];
 
 int pin_num[9] = {2, 3, 12, 13, 4, 5, 6, 7, 8}; // used pin NeoPIXEL
 int sw[3] = {9, 10, 11}; // used pin switch
-Adafruit_NeoPixel p0 = Adafruit_NeoPixel(NUMPIXELS, pin_num[0], NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel p1 = Adafruit_NeoPixel(NUMPIXELS, pin_num[1], NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel p2 = Adafruit_NeoPixel(NUMPIXELS, pin_num[2], NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel p3 = Adafruit_NeoPixel(NUMPIXELS, pin_num[3], NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel p4 = Adafruit_NeoPixel(NUMPIXELS, pin_num[4], NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel p5 = Adafruit_NeoPixel(NUMPIXELS, pin_num[5], NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel p6 = Adafruit_NeoPixel(NUMPIXELS, pin_num[6], NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel p7 = Adafruit_NeoPixel(NUMPIXELS, pin_num[7], NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel p8 = Adafruit_NeoPixel(NUMPIXELS, pin_num[8], NEO_GRB + NEO_KHZ800);
-
 Adafruit_NeoPixel selector = Adafruit_NeoPixel(NUMPIXELS, pin_num[0], NEO_GRB + NEO_KHZ800);
 
 
@@ -45,6 +35,7 @@ Adafruit_NeoPixel selector = Adafruit_NeoPixel(NUMPIXELS, pin_num[0], NEO_GRB + 
 void init_led();
 void init_sector();
 void led_main();
+void select(int n);
 
 // bright
 void bright_H();
@@ -62,17 +53,16 @@ void setup()
   Serial.begin(9600);
   init_led();
   init_sector();
-  bright_sector(7);
+  //bright_H();
+  //bright_playground();
 }
  
-void loop() {
-  //led_main();
-  //Serial.println(digitalRead(sw[0]));
-  //bright_all();
-  //bright_sector(7);  
-  //colorWipe(p[0].Color(0,0,100), 0, 1);
-  p[8].setPixelColor(3, p[8].Color(0,0,100));
-  
+void loop() 
+{
+  //select(0);
+  //colorWipe(selector.Color(100,0,0), 0, 1);
+  //bright_H();
+  delay(3000);
 }
 
 /* ---- func ---- */
@@ -84,28 +74,11 @@ void init_led()
 
   for (int i = 0; i < 9; i++){
     pinMode(pin_num[i], OUTPUT);
+    select(i);
+    selector.begin();
+    selector.show();
   }
   // This initializes the NeoPixel library.
-  p0.begin();
-  p1.begin();
-  p2.begin();
-  p3.begin();
-  p4.begin();
-  p5.begin();
-  p6.begin();
-  p7.begin();
-  p8.begin();
-  
-  // show
-  p0.show();
-  p1.show();
-  p2.show();
-  p3.show();
-  p4.show();
-  p5.show();
-  p6.show();
-  p7.show();
-  p8.show();
   
   pinMode(sw[0], INPUT);
   pinMode(sw[1], INPUT);
@@ -144,6 +117,12 @@ void init_sector()
         s[i].j_hat[1] = led_line_j_hat[i % 4 + 1];
     }
 }
+void select(int n)
+{
+  selector = Adafruit_NeoPixel(NUMPIXELS, pin_num[n], NEO_GRB + NEO_KHZ800);
+  selector.begin();
+  //selector.show();
+}
 
 void led_main()
 {  
@@ -163,21 +142,31 @@ void led_main()
 }
 
 // bright
+
 void bright_playground()
 {
   // play ground
-  colorWipe(p1.Color(100,0,0), 0, 1);
-  colorWipeScope(p4.Color(100,0,0), 0, 4, 8, 20);
-  colorWipeScope(p6.Color(100,0,0), 0, 6, 8, 20);
-  colorWipeScope(p8.Color(100,0,0), 0, 8, 8, 20);
-  colorWipe(p2.Color(100,0,0), 0, 2);
+  select(1);
+  colorWipe(selector.Color(0,100,0), 0, 1);
+  select(4);
+  colorWipeScope(selector.Color(0,100,0), 0, 4, 8, 18);
+  select(6);
+  colorWipeScope(selector.Color(0,100,0), 0, 6, 8, 18);
+  select(8);
+  colorWipeScope(selector.Color(0,100,0), 0, 8, 8, 18);
+  select(2);
+  colorWipe(selector.Color(0,100,0), 0, 2);
 }
+
 void bright_H()
 {
   // H
-  colorWipe(p1.Color(100,0,0), 0, 1);
-  colorWipeScope(p5.Color(100,0,0), 0, 5, 8, 20);
-  colorWipe(p2.Color(100,0,0), 0, 2);
+  select(1);
+  colorWipe(selector.Color(100,0,0), 0, 1);
+  select(6);
+  colorWipeScope(selector.Color(100,0,0), 0, 6, 8, 18);
+  select(2);
+  colorWipe(selector.Color(100,0,0), 0, 2);
   
 }
 /*
@@ -198,19 +187,15 @@ void bright_allsector()
      bright_sector(i);
   }
 }
-*/
+
 void bright_all()
 {
   colorWipe(p0.Color(0,0,100), 0, 0);
 }
+*/
 
 // color wipe
-void select(int n)
-{
-  selector = Adafruit_NeoPixel(NUMPIXELS, pin_num[n], NEO_GRB + NEO_KHZ800);
-  selector.begin();
-  selector.show();
-}
+
 void colorWipe(uint32_t c, uint16_t wait, int n)
 {
   select(n);
@@ -222,6 +207,7 @@ void colorWipe(uint32_t c, uint16_t wait, int n)
 }
 void colorWipeScope(uint32_t c, uint16_t wait, int n, int start, int finish)
 {
+  select(n);
   for (int i = start; i < finish; i++){
     selector.setPixelColor(i,c);
     selector.show();
