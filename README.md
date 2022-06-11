@@ -13,6 +13,14 @@
 - 임산부, 노인, 장애인, 어린이, 차 상위 계층, 환자, 차별 받는다고 느끼는 사람,
 - 일반적인 통념으로 봤을 때 도움이 필요한 사람
 
-## 간트차트
+## 아이디어
+
+![image](https://user-images.githubusercontent.com/54783158/173187748-32280619-b001-4708-bc18-351122ce99da.png)
+> open
+
+![image](https://user-images.githubusercontent.com/54783158/173187773-9d0c477f-70f0-4074-ab39-76a1a83e82a4.png)
+> closed
+
+## 일정
 ![Untitled (4)](https://user-images.githubusercontent.com/54783158/171394075-90cd91cf-1da7-4ddc-9b22-aa745f60bf06.png)
 
