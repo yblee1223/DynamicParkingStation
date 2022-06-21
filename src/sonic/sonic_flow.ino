@@ -53,6 +53,7 @@ Adafruit_NeoPixel selector = Adafruit_NeoPixel(NUMPIXELS, pin_num[0], NEO_GRB + 
 int cds[8] = {A0, A1, A2, A3, A4, A5, A6, A7}; // analogpin
 // RFID
 MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance
+int tagging = 0;
 // LCD
 LiquidCrystal lcd(4, 6, 10, 11, 12, 13);
 // ACT
@@ -409,7 +410,7 @@ void read_data()
 
 
   //----------------------------------------
-
+  tagging = 1;
   Serial.println(F("\n**End Reading**\n"));
 
   delay(1000); //change value if you want to read cards faster
@@ -424,7 +425,7 @@ void read_data()
 void cds_main()
 {
   cds_state();
-  //find_parking_place();
+  find_parking_place();
   pps();
 }
 void cds_state()
@@ -435,8 +436,8 @@ void cds_state()
     if (cdsValue > 220){
       //digitalWrite(led, HIGH);
       s[i].car_in = 1;
-      bright_off();
-      bright_sector(i, 'B');
+      //bright_off();
+      //bright_sector(i, 'B');
       // cds에 밝기가 감지되면 bright sector
     }
     else{
@@ -447,12 +448,18 @@ void cds_state()
 
 void find_parking_place()// 차량이 처음 출입시 주차할 장소를 찾는다.
 {
-  // if tagging
+  if(tagging == 1){
   for (int i = 0; i < 8; i++){
      if (s[i].car_in == 0){
+      bright_off();
       bright_sector(i, 'G');
       break;
      }
+     else{
+      bright_off();
+     }
+  }
+  tagging = 0;
   }
 }
 void pps()//장애인 구역 보존 알고리즘
@@ -491,6 +498,7 @@ void select(int n)
 
 void led_main()
 {  
+  //bright_all();
   if(digitalRead(sw[0]) == HIGH){ // 
     bright_playground();
     delay(500);
@@ -542,7 +550,7 @@ void bright_H()
 
 void bright_sector(int sector_num, char color)
 {
-  int c[3] = {100, 0, 0};// default
+  int c[3] = {0, 100, 0};// default
   // select color
   if (color == 'R'){
     int c[3] = {100, 0, 0};
