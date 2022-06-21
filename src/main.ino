@@ -1,15 +1,20 @@
 #include <Adafruit_NeoPixel.h> // led
-
-// led 
+// RFID
+// CDS
+// LCD
+// ACT
+// SONIC
+// LED
 #define MAXPIN 9 
 #define NUMPIXELS 27
   
 
-//led variable
+// struct
 typedef struct sector { // parking sector
     int sector_num;
 
-    // cds
+    // CDS
+    int cdsValue;
     int car_in;
     
     // LED
@@ -27,14 +32,18 @@ typedef struct sector { // parking sector
 Sector s[8];
 
 // LED
-int pin_num[9] = {2, 3, 12, 13, 4, 5, 6, 7, 8}; // used pin NeoPIXEL
+int pin_num[9] = {3, 4, 5, 6, 7, 8, 9, 10, 11}; // used pin NeoPIXEL
 int sw[3] = {9, 10, 11}; // used pin switch
 Adafruit_NeoPixel selector = Adafruit_NeoPixel(NUMPIXELS, pin_num[0], NEO_GRB + NEO_KHZ800);
 // 가로 0, 1, 2, 3
 // 세로 4, 5, 6, 7, 8 
 
-// cds
+// CDS
 int cds[8] = {A0, A1, A2, A3, A4, A5, A6, A7}; // analogpin
+// RFID
+// LCD
+// ACT
+// SONIC
 
 
 /* --- init func --- */
@@ -53,8 +62,8 @@ void bright_allsector();
 void bright_sector(int sector_num, char color);
 void bright_7_segment();// 가운데 걸로 7segment 주차 대수 보여주기
 
-
-
+// cds
+void is_carin(); // 섹터에 차량 있는지 확인
 
 void setup() 
 {
@@ -130,22 +139,8 @@ void init_sector()
         s[i].j_hat[1] = led_line_j_hat[i % 4 + 1];
     }
 }
-// CDS
-void cds_detect()
-{
-  for (int i = 0; i< 8; i++){
-    cdsValue = analogRead(cds[i]);
-    if (cdsValue > 220){
-      //digitalWrite(led, HIGH);
-      s[i].car_in = 1;
-      bright_off();
-      bright_sector(i)
-    }
-    else{
-      s[i].car_in = 0;
-    }
-  }
-}
+
+
 
 
 void dps_main()
@@ -158,8 +153,69 @@ void dps_main()
   // GATE
   // CDS
   // LED
-  
+  cds_main();
+  led_main();
 }
+
+
+
+// CDS
+void cds_main()
+{
+  cds_state();
+  //find_parking_place();
+  pps();
+}
+void cds_state();
+{
+  for (int i = 0; i< 8; i++){
+    cdsValue = analogRead(cds[i]);
+    if (cdsValue > 220){
+      //digitalWrite(led, HIGH);
+      s[i].car_in = 1;
+      bright_off();
+      bright_sector(i, B);
+      // cds에 밝기가 감지되면 bright sector
+    }
+    else{
+      s[i].car_in = 0;
+    }
+  }
+}
+
+void find_parking_place()// 차량이 처음 출입시 주차할 장소를 찾는다.
+{
+  // if tagging
+  for (int i = 0; i < 8; i++){
+     if (s[i].car_in == 0){
+      bright_sector(i, G);
+      break;
+     }
+  }
+}
+void pps()//장애인 구역 보존 알고리즘
+{
+  if (s[0].car_in == 1 && s[1].car_in == 1){
+    for (int i = 2; i < 8; i++){
+      if (s[i].car_in == 0){
+        bright_sector(i, B);// blue
+        break;
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 // LED
 void select(int n)
@@ -184,41 +240,8 @@ void led_main()
     bright_H();
     delay(500);
   }
-  //colorWipe(pixels.Color(0,0,0),100);
 }
 
-void find_parking_place()
-{
-  // if tagging
-  for (int i = 0; i < 8; i++){
-     if (s[i].car_in == 0){
-      bright(i+1);
-      break;
-     }
-  }
-}
-
-void find_parking_place()
-{
-  // if tagging
-  for (int i = 0; i < 8; i++){
-     if (s[i].car_in == 0){
-      bright_sector(i);
-      break;
-     }
-  }
-}
-void pps()//Preservation of disabled parking spaces
-{
-  if (s[0].car_in == 1 && s[1].car_in == 1){
-    for (int i = 2; i < 8; i++){
-      if (s[i].car_in == 0){
-        bright_sector(i);// blue
-        break;
-      }
-    }
-  }
-}
 // bright
 void bright_off()
 {
@@ -296,9 +319,7 @@ void bright_all()
   }
 }
 
-
 // color wipe
-
 void colorWipe(uint32_t c, uint16_t wait, int n)
 {
   select(n);
