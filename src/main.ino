@@ -37,7 +37,7 @@ Sector s[8];
 
 // LED
 int pin_num[9] = {4, 5, 6, 7, 8, 9, 10, 11, 12}; // used pin NeoPIXEL
-int sw[3] = {53, 54, 52}; // used pin switch
+int sw[3] = {51, 52, 53}; // used pin switch
 Adafruit_NeoPixel selector = Adafruit_NeoPixel(NUMPIXELS, pin_num[0], NEO_GRB + NEO_KHZ800);
 // 가로 0, 1, 2, 3
 // 세로 4, 5, 6, 7, 8 
@@ -45,8 +45,8 @@ Adafruit_NeoPixel selector = Adafruit_NeoPixel(NUMPIXELS, pin_num[0], NEO_GRB + 
 // CDS
 int cds[8] = {A0, A1, A2, A3, A4, A5, A6, A7}; // analogpin
 // ACT
-const int SWITCH_A=2;
-const int SWITCH_B=3;
+const int SWITCH_A = 48;
+const int SWITCH_B = 49;
 int pos = 0;    // variable to store the servo position
 
 // SONIC
@@ -55,6 +55,7 @@ int echoPin = 3;
 Adafruit_NeoPixel strip;
 Adafruit_NeoPixel strip1;
 
+// Servo
 
 /* --- init func --- */
 void init_sector();
@@ -98,10 +99,7 @@ void setup()
   init_sector();
   init_led();
   init_sonic();
-  myservo.attach(9);
-  pinMode(SWITCH_B, INPUT);
-  pinMode(SWITCH_A, INPUT);// attaches the servo on pin 9 to the servo object
-
+  //init_servo();
 }
  
 void loop() 
@@ -151,7 +149,12 @@ void init_sector()
         s[i].j_hat[1] = led_line_j_hat[i % 4 + 1];
     }
 }
-
+void init_servo()
+{
+  myservo.attach(50);
+  pinMode(SWITCH_B, INPUT);
+  pinMode(SWITCH_A, INPUT);
+}
 void init_led()
 {
   // pinMode
@@ -161,10 +164,9 @@ void init_led()
   }
   // This initializes the NeoPixel library.
   
-  pinMode(sw[0], INPUT);
-  pinMode(sw[1], INPUT);
-  pinMode(sw[2], INPUT);
-  bright_off();
+  pinMode(sw[0], INPUT_PULLUP);
+  pinMode(sw[1], INPUT_PULLUP);
+  pinMode(sw[2], INPUT_PULLUP);
 }
 
 void init_sonic()
@@ -180,7 +182,7 @@ void init_sonic()
 void dps_main()
 {
   // servo
-  lift();
+  // lift();
   
   // CDS
   cds_main();
@@ -190,6 +192,8 @@ void dps_main()
   
   // LED
   led_main();
+  
+  //lift();
 }
 
 
@@ -231,25 +235,26 @@ void hps(float distance)// 주차 보조 시스템
     //float distance = duration*0.17;
     Serial.println(distance);
   
-  if(distance >= 3.5 && distance <= 4){
+  if(distance >= 1.5 && distance <= 2){
     colorWipe1(strip.Color(0,0,100), strip1.Color(0,0,100), 0);
     Serial.print(distance);
     Serial.println("r\n");
-    exit(1);
+    bright_off();
+    delay(3000);
+    return;
   }
-  else if(distance > 4){
+  else if(distance > 1.5){
     colorWipe1(strip.Color(100,100,0),strip1.Color(100,100,0),50);
     Serial.print(distance);
     Serial.println("l\n");
   }
-  else if(distance < 3.5){
+  else if(distance < 2){
     colorReWipe(strip.Color(100,0,0),strip1.Color(100,0,0),50);
     Serial.print(distance);
     Serial.println("s\n");
   }
-  delay(30);
+  //delay(3000);
   }
-  bright_off();
 }
 void colorWipe1(uint32_t c, uint32_t c1, uint8_t wait){
   for(int i = 18; i < 27;i++){
@@ -271,25 +276,26 @@ void colorReWipe(uint32_t c, uint32_t c1, uint8_t wait){
 }
 
 //Servo
-void up_lift()
-{
-   
-}
 void lift()
 {
-  if (digitalRead(SWITCH_A)==1){
-    for (pos = 0; pos <= 40; pos += 1) { // goes from 0 degrees to 180 degrees
+   if (digitalRead(SWITCH_A)==HIGH){
+    Serial.println(digitalRead(SWITCH_A));
+    for (pos = 0; pos <= 5; pos += 1) { // goes from 0 degrees to 180 degrees
     // in steps of 1 degree
-    myservo.write(pos); // tell servo to go to position in variable 'pos'
-    delay(10);
+      myservo.write(pos); // tell servo to go to position in variable 'pos'
+      delay(50);
+                   
     }
   }
-  if (digitalRead(SWITCH_B)==1){
-    for (pos = 40; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(10);
+
+  if (digitalRead(SWITCH_B)==HIGH){
+    Serial.println(digitalRead(SWITCH_B));
+    for (pos = 10; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
+      myservo.write(pos);              // tell servo to go to position in variable 'pos'
+      delay(50);
     }
   }
+
 }
 
 // CDS
@@ -297,7 +303,7 @@ void lift()
 void cds_main()
 {
   cds_state();
-  //find_parking_place();
+  find_parking_place();
   pps();
 }
 void cds_state()
@@ -324,6 +330,7 @@ void find_parking_place()// 차량이 처음 출입시 주차할 장소를 찾�
      if (s[i].car_in == 0){
       bright_off();
       bright_sector(i, 'G');
+      delay(1000);
       break;
      }
      else{
@@ -369,20 +376,23 @@ void select(int n)
 
 void led_main()
 {  
-  if(digitalRead(sw[0]) == HIGH){ // 
-    Serial.println(1);
+  if(digitalRead(sw[0]) == LOW){ // 
+    bright_off();
+    Serial.println(digitalRead(sw[0]));
     bright_playground();
-    delay(5000);
+    delay(3000);
   }
-  else if(digitalRead(sw[1]) == HIGH){
-    Serial.println(2);
+  else if(digitalRead(sw[1]) == LOW){
+    bright_off();
+    Serial.println(digitalRead(sw[1]));
     bright_all();
-    delay(5000);
+    delay(3000);
   }
-  else if(digitalRead(sw[2]) == HIGH){
-    Serial.println(3);
+  else if(digitalRead(sw[2]) == LOW){
+    bright_off();
+    Serial.println(digitalRead(sw[2]));
     bright_H();
-    delay(5000);
+    delay(3000);
   }
   bright_off();
 }
@@ -474,7 +484,7 @@ void bright_all()
 {
   for(int i = 0; i < 9; i++){
     select(i);
-    colorWipe(selector.Color(100,0,0), 0, i);
+    colorWipe(selector.Color(100,100,100), 0, i);
   }
 }
 
