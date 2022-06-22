@@ -1,23 +1,12 @@
 #include <string.h>
 // LED
 #include <Adafruit_NeoPixel.h> // led
-// RFID
-#include <SPI.h>
-#include <MFRC522.h>
-#define RST_PIN         9           // Configurable, see typical pin layout above
-#define SS_PIN          10          // Configurable, see typical pin layout above
 // SONIC
-#define PIN 7
-#define PIN1 8
-#define NUMPIXELS 27 //소자 개수 파악
 #define BRIGHTNESS 100
-// LCD
-#include<LiquidCrystal.h> //LCD 라이브러리
-
-char car_num[100];
-int D; // disable
-int W;// wheel chair
 // ACT
+#include <Servo.h>
+
+Servo myservo; 
 // SONIC
 
 #define MAXPIN 9 
@@ -43,37 +32,53 @@ typedef struct sector { // parking sector
 }Sector;
 
 // init
+int plus_pps=0;
 Sector s[8];
 
 // LED
-int pin_num[9] = {3, 4, 5, 6, 7, 8, 9, 10, 11}; // used pin NeoPIXEL
-int sw[3] = {9, 10, 11}; // used pin switch
+int pin_num[9] = {4, 5, 6, 7, 8, 9, 10, 11, 12}; // used pin NeoPIXEL
+int sw[3] = {53, 54, 52}; // used pin switch
 Adafruit_NeoPixel selector = Adafruit_NeoPixel(NUMPIXELS, pin_num[0], NEO_GRB + NEO_KHZ800);
 // 가로 0, 1, 2, 3
 // 세로 4, 5, 6, 7, 8 
 
 // CDS
 int cds[8] = {A0, A1, A2, A3, A4, A5, A6, A7}; // analogpin
-// RFID
-MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance
-// LCD
-LiquidCrystal lcd(4, 6, 10, 11, 12, 13);
 // ACT
+const int SWITCH_A=2;
+const int SWITCH_B=3;
+int pos = 0;    // variable to store the servo position
+
 // SONIC
 int trigPin = 2;
 int echoPin = 3;
+Adafruit_NeoPixel strip;
+Adafruit_NeoPixel strip1;
 
 
 /* --- init func --- */
 void init_sector();
 void init_led();
-void init_rfid();
 void init_sonic();
 
 
 
 // main
 void led_main();
+void sonic_main();
+void cds_main();
+
+//dps
+void find_parking_place();
+void pps();
+
+//sonic
+void colorWipe1(uint32_t c, uint32_t c1, uint8_t wait);
+void colorReWipe(uint32_t c, uint32_t c1, uint8_t wait);
+void hps(int distance);
+
+// cds
+void cds_state();
 
 //led
 void select(int n);
@@ -92,20 +97,16 @@ void setup()
   Serial.begin(9600);
   init_sector();
   init_led();
-  init_rfid();
-  lcd.begin(16, 2); // LCD
-  //bright_H();
-  //bright_playground();
+  init_sonic();
+  myservo.attach(9);
+  pinMode(SWITCH_B, INPUT);
+  pinMode(SWITCH_A, INPUT);// attaches the servo on pin 9 to the servo object
+
 }
  
 void loop() 
 {
-  // CDS
-  cds_detect()
-  
-  // LED
-  led_main();
-  
+  dps_main();
 }
 
 /* ---- func ---- */
@@ -150,12 +151,6 @@ void init_sector()
         s[i].j_hat[1] = led_line_j_hat[i % 4 + 1];
     }
 }
-void init_rfid()
-{
-  SPI.begin();                                                  // Init SPI bus
-  mfrc522.PCD_Init();                                              // Init MFRC522 card
-  Serial.println(F("Read personal data on a MIFARE PICC:"));    //shows in serial that it is ready to read
-}
 
 void init_led()
 {
@@ -181,31 +176,23 @@ void init_sonic()
   Serial.begin(9600);
 }
 
-
+// DPS
 void dps_main()
 {
-  // RFID
-  // if disabled
-  // if 
-  // if parking
-  // 
-  // GATE
+  // servo
+  lift();
+  
   // CDS
-  // LED
-  rfid_main();
   cds_main();
+ 
+  // SONIC
+  sonic_main();
+  
+  // LED
   led_main();
 }
-// DPS
-// LCD
-void lcd_main()
-{
-  if 
-  lcd.setCursor(5, 0);  //커서를 (5, 0)으로 보내라
-  lcd.print("마이더부"); //(5, 0)부터 Hello!!를 찍어라
-  lcd.setCursor(1,1);   //커서를 (1,1)로 옮겨라
-  lcd.print("선형대수"); //(1,1)부터 Codingrun.com을 찍어라
-}
+
+
 // SONIC
 //*****************************************************************************************//
 void sonic_main()
@@ -216,18 +203,35 @@ void sonic_main()
   delay(30);
   digitalWrite(trigPin, LOW); //초음파 보내고 받기
   float duration = pulseIn(echoPin, HIGH); //마이크로 초 구하기
-  float distance = ((float)            00) / 2; //거리 구하기
-
-  if (distance < 7):
-    Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUMPIXELS, pin_num[4], NEO_GRB + NEO_KHZ800);
-    Adafruit_NeoPixel strip1 = Adafruit_NeoPixel(NUMPIXELS, pin_num[5], NEO_GRB + NEO_KHZ800);
+  float distance = ((340 * duration) / 10000)/ 2; //거리 구하기
+  //float distance = duration*0.17;
+  Serial.println(distance);
+  
+  if (distance < 14.5){
+    strip = Adafruit_NeoPixel(NUMPIXELS, pin_num[7], NEO_GRB + NEO_KHZ800);
+    strip1 = Adafruit_NeoPixel(NUMPIXELS, pin_num[8], NEO_GRB + NEO_KHZ800);
     hps(distance);
+  }
+  
 }
 
-void hps(int distance)// 주차 보조 시스템
+void hps(float distance)// 주차 보조 시스템
 { 
-  while(distance > 2){
-  if(distance >= 2 && distance <= 3){
+  bright_off();
+  while(distance < 14){
+    strip.begin();
+    strip1.begin();
+    digitalWrite(trigPin, LOW);
+    delay(30);
+    digitalWrite(trigPin, HIGH);
+    delay(30);
+    digitalWrite(trigPin, LOW); //초음파 보내고 받기
+    float duration = pulseIn(echoPin, HIGH); //마이크로 초 구하기
+    float distance = ((340 * duration) / 10000)/ 2; //거리 구하기
+    //float distance = duration*0.17;
+    Serial.println(distance);
+  
+  if(distance >= 3.5 && distance <= 4){
     colorWipe1(strip.Color(0,0,100), strip1.Color(0,0,100), 0);
     Serial.print(distance);
     Serial.println("r\n");
@@ -238,167 +242,55 @@ void hps(int distance)// 주차 보조 시스템
     Serial.print(distance);
     Serial.println("l\n");
   }
-  else if(distance < 2){
+  else if(distance < 3.5){
     colorReWipe(strip.Color(100,0,0),strip1.Color(100,0,0),50);
     Serial.print(distance);
     Serial.println("s\n");
   }
-  delay(3000);
+  delay(30);
   }
+  bright_off();
 }
 void colorWipe1(uint32_t c, uint32_t c1, uint8_t wait){
-  for(int i = 0; i < NUMPIXELS;i+=2){
+  for(int i = 18; i < 27;i++){
     strip.setPixelColor(i,c);
-    stripe.setPixelColor(i,c1);
+    strip1.setPixelColor(i,c1);
     strip.show();
-    stripe.show();
+    strip1.show();
     delay(wait);
   }
 }
 void colorReWipe(uint32_t c, uint32_t c1, uint8_t wait){
-  for(int i = NUMPIXELS - 1; i>=0; i-=2){
+  for(int i = 27 - 1; i >= 18; i--){
     strip.setPixelColor(i,c);
-    stripe.setPixelColor(i,c1);
+    strip1.setPixelColor(i,c1);
     strip.show();
-    stripe.show();
+    strip1.show();
     delay(wait);
   }
 }
-// RFID
-//*****************************************************************************************//
-void rfid_main()
+
+//Servo
+void up_lift()
 {
-  read_data();
+   
 }
-void read_data()
+void lift()
 {
-  // Prepare key - all keys are set to FFFFFFFFFFFFh at chip delivery from the factory.
-  MFRC522::MIFARE_Key key;
-  for (byte i = 0; i < 6; i++) key.keyByte[i] = 0xFF;
-
-  //some variables we need
-  byte block;
-  byte len;
-  MFRC522::StatusCode status;
-
-  //-------------------------------------------
-
-  // Reset the loop if no new card present on the sensor/reader. This saves the entire process when idle.
-  if ( ! mfrc522.PICC_IsNewCardPresent()) {
-    return;
-  }
-
-  // Select one of the cards
-  if ( ! mfrc522.PICC_ReadCardSerial()) {
-    return;
-  }
-
-  Serial.println(F("**Card Detected:**"));
-
-  //-------------------------------------------
-
-  mfrc522.PICC_DumpDetailsToSerial(&(mfrc522.uid)); //dump some details about the card
-
-  //mfrc522.PICC_DumpToSerial(&(mfrc522.uid));      //uncomment this to see all blocks in hex
-
-  //-------------------------------------------
-  int cnt = 0;
-  
-
-  byte buffer1[18];
-  char str1[100] = " "; // 2진수 입력
-  int a = 0, b = 0;
-  block = 1;
-  len = 18;
-
-  //------------------------------------------- GET binary code
-  status = mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, block, &key, &(mfrc522.uid)); //line 834 of MFRC522.cpp file
-  if (status != MFRC522::STATUS_OK) {
-    Serial.print(F("Authentication failed: "));
-    Serial.println(mfrc522.GetStatusCodeName(status));
-    return;
-  }
-
-  status = mfrc522.MIFARE_Read(block, buffer1, &len);
-  if (status != MFRC522::STATUS_OK) {
-    Serial.print(F("Reading failed: "));
-    Serial.println(mfrc522.GetStatusCodeName(status));
-    return;
-  }
-  Serial.print(F("data 1, data 2: "));
-  //PRINT FIRST NAME
-  for (uint8_t i = 0; i < 16; i++)
-  {
-    if (buffer1[i] != 32)
-    {
-      Serial.write(buffer1[i]);
-      if (buffer1[i] == ' ')
-        break;
-      str1[i] = buffer1[i];
+  if (digitalRead(SWITCH_A)==1){
+    for (pos = 0; pos <= 40; pos += 1) { // goes from 0 degrees to 180 degrees
+    // in steps of 1 degree
+    myservo.write(pos); // tell servo to go to position in variable 'pos'
+    delay(10);
     }
   }
-  Serial.println();
-  a = str1[0]-'0';
-  b = str1[1]-'0';
-  D = a;
-  W = b;
-  Serial.print("장애인 차량: ");
-  Serial.println(a);
-  Serial.print("휠체어 유무: ");
-  Serial.println(b);
-  //Serial.println(str1);
-  //Serial.println(strlen(str1));
-  
-  Serial.println(" ");
-  
-  //---------------------------------------- GET car number
-
-  byte buffer2[18];
-  char str2[100] = " "; // 차량번호
-  block = 4;
-
-  status = mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, block, &key, &(mfrc522.uid)); //line 834
-  if (status != MFRC522::STATUS_OK) {
-    Serial.print(F("Authentication failed: "));
-    Serial.println(mfrc522.GetStatusCodeName(status));
-    return;
-  }
-
-  status = mfrc522.MIFARE_Read(block, buffer2, &len);
-  if (status != MFRC522::STATUS_OK) {
-    Serial.print(F("Reading failed: "));
-    Serial.println(mfrc522.GetStatusCodeName(status));
-    return;
-  }
-  cnt = 0;
-  Serial.print(F("data 3: "));
-  //PRINT LAST NAME
-  for (uint8_t i = 1; i < 16; i++) {
-    Serial.write(buffer2[i] );
-    if (buffer2[i] == ' '){
-      if (cnt == 1)
-        break;
-      cnt = 1;
+  if (digitalRead(SWITCH_B)==1){
+    for (pos = 40; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
+    myservo.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(10);
     }
-    str2[i-1] = buffer2[i];
   }
-  strcpy(car_num, str2);
-  //Serial.println();
-  //Serial.print("차량번호");
-  //Serial.println(str2);
-  //Serial.println(strlen(str2));
-
-
-  //----------------------------------------
-
-  Serial.println(F("\n**End Reading**\n"));
-
-  delay(1000); //change value if you want to read cards faster
-
-  mfrc522.PICC_HaltA();
-  mfrc522.PCD_StopCrypto1();
 }
-
 
 // CDS
 //*****************************************************************************************//
@@ -410,13 +302,14 @@ void cds_main()
 }
 void cds_state()
 {
+  int cdsValue;
   for (int i = 0; i< 8; i++){
     cdsValue = analogRead(cds[i]);
     if (cdsValue > 220){
       //digitalWrite(led, HIGH);
       s[i].car_in = 1;
-      bright_off();
-      bright_sector(i, B);
+      //bright_off();
+      //bright_sector(i, 'B');
       // cds에 밝기가 감지되면 bright sector
     }
     else{
@@ -427,23 +320,28 @@ void cds_state()
 
 void find_parking_place()// 차량이 처음 출입시 주차할 장소를 찾는다.
 {
-  // if tagging
   for (int i = 0; i < 8; i++){
      if (s[i].car_in == 0){
-      bright_sector(i, G);
+      bright_off();
+      bright_sector(i, 'G');
       break;
+     }
+     else{
+      bright_off();
      }
   }
 }
 void pps()//장애인 구역 보존 알고리즘
-{
+{ if (plus_pps == 0){
   if (s[0].car_in == 1 && s[1].car_in == 1){
     for (int i = 2; i < 8; i++){
       if (s[i].car_in == 0){
-        bright_sector(i, B);// blue
+        plus_pps=1;
+        bright_sector(i, 'B');// blue
         break;
       }
     }
+  }
   }
 }
 
@@ -472,17 +370,21 @@ void select(int n)
 void led_main()
 {  
   if(digitalRead(sw[0]) == HIGH){ // 
+    Serial.println(1);
     bright_playground();
-    delay(500);
+    delay(5000);
   }
   else if(digitalRead(sw[1]) == HIGH){
+    Serial.println(2);
     bright_all();
-    delay(500);
+    delay(5000);
   }
   else if(digitalRead(sw[2]) == HIGH){
+    Serial.println(3);
     bright_H();
-    delay(500);
+    delay(5000);
   }
+  bright_off();
 }
 
 // bright
@@ -496,42 +398,56 @@ void bright_off()
 void bright_playground()
 {
   // play ground
+  select(0);
+  colorWipe(selector.Color(0,100,0), 0, 0);
   select(1);
   colorWipe(selector.Color(0,100,0), 0, 1);
-  select(4);
-  colorWipeScope(selector.Color(0,100,0), 0, 4, 8, 18);
-  select(6);
-  colorWipeScope(selector.Color(0,100,0), 0, 6, 8, 18);
-  select(8);
-  colorWipeScope(selector.Color(0,100,0), 0, 8, 8, 18);
   select(2);
   colorWipe(selector.Color(0,100,0), 0, 2);
+  select(3);
+  colorWipe(selector.Color(0,100,0), 0, 3);
+  select(4);
+  colorWipe(selector.Color(0,100,0), 0, 4);
+  select(6);
+  colorWipe(selector.Color(0,100,0), 0, 6);
+  select(8);
+  colorWipe(selector.Color(0,100,0), 0, 8);
+  
 }
 
 void bright_H()
 {
   // H
+  select(0);
+  colorWipe(selector.Color(100,0,0), 0, 0);
+  select(3);
+  colorWipe(selector.Color(100,0,0), 0, 3);
+  select(4);
+  colorWipe(selector.Color(100,0,0), 0, 4);
+  select(8);
+  colorWipe(selector.Color(100,0,0), 0, 8);
   select(1);
-  colorWipe(selector.Color(100,0,0), 0, 1);
+  colorWipeScope(selector.Color(100,0,0), 0, 1, 5, 15);
   select(6);
   colorWipeScope(selector.Color(100,0,0), 0, 6, 8, 18);
   select(2);
-  colorWipe(selector.Color(100,0,0), 0, 2);
+  colorWipeScope(selector.Color(100,0,0), 0, 2, 5, 15);
+  //colorWipeScope(selector.Color(100,0,0), 0, 6, 8, 18);
   
 }
 
 void bright_sector(int sector_num, char color)
 {
+  int c[3] = {0, 100, 0};// default
   // select color
-  int c[3];
   if (color == 'R'){
-    c = {100, 0, 0}
+    int c[3] = {100, 0, 0};
   }
   else if(color == 'G'){
-    c = {0, 100, 0};
+    int c[3] = {0, 100, 0};
   }
   else if(color == 'B'){
-    c = {0, 0, 100};
+    int c[3] = {0, 0, 100};
   }
   
   // up & down
@@ -550,7 +466,7 @@ void bright_sector(int sector_num, char color)
 void bright_allsector()
 {
   for (int i = 0; i < 8; i++){
-     bright_sector(i, R);
+     bright_sector(i, 'R');
   }
 }
 
