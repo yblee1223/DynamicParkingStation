@@ -37,7 +37,7 @@ Sector s[8];
 
 // LED
 int pin_num[9] = {4, 5, 6, 7, 8, 9, 10, 11, 12}; // used pin NeoPIXEL
-int sw[3] = {51, 52, 53}; // used pin switch
+int sw[4] = {51, 52, 53, 47}; // used pin switch
 Adafruit_NeoPixel selector = Adafruit_NeoPixel(NUMPIXELS, pin_num[0], NEO_GRB + NEO_KHZ800);
 // 가로 0, 1, 2, 3
 // 세로 4, 5, 6, 7, 8 
@@ -83,6 +83,7 @@ void cds_state();
 
 //led
 void select(int n);
+
 // bright
 void bright_H();
 void bright_playground();
@@ -90,8 +91,9 @@ void bright_all();
 void bright_off();
 void bright_allsector();
 void bright_sector(int sector_num, char color);
-void bright_7_segment();// 가운데 걸로 7segment 주차 대수 보여주기
-
+void bright_7segment(int sum);// 가운데 걸로 7segment 주차 대수 보여주기
+void bright_7segment(int sum);
+void count_parking();
 
 void setup() 
 {
@@ -167,6 +169,7 @@ void init_led()
   pinMode(sw[0], INPUT_PULLUP);
   pinMode(sw[1], INPUT_PULLUP);
   pinMode(sw[2], INPUT_PULLUP);
+  pinMode(sw[3], INPUT_PULLUP);
 }
 
 void init_sonic()
@@ -351,8 +354,13 @@ void pps()//장애인 구역 보존 알고리즘
   }
   }
 }
-
-
+void count_parking(){
+  int sum = 0;
+  for (int i; i < 8; i++){
+    sum += s[i].car_in;
+  }
+  bright_7segment(sum);
+}
 
 
 
@@ -392,6 +400,12 @@ void led_main()
     bright_off();
     Serial.println(digitalRead(sw[2]));
     bright_H();
+    delay(3000);
+  }
+  else if(digitalRead(sw[3]) == LOW){
+    bright_off();
+    Serial.println(digitalRead(sw[3]));
+    bright_7segment();
     delay(3000);
   }
   bright_off();
@@ -448,7 +462,7 @@ void bright_H()
 
 void bright_sector(int sector_num, char color)
 {
-  int c[3] = {0, 100, 0};// default
+  int c[3] = {0, 0, 100};// default
   // select color
   if (color == 'R'){
     int c[3] = {100, 0, 0};
@@ -485,6 +499,65 @@ void bright_all()
   for(int i = 0; i < 9; i++){
     select(i);
     colorWipe(selector.Color(100,100,100), 0, i);
+  }
+}
+
+
+void bright_7segment(int sum){
+  int digitForNum[10][8] = {
+  {1, 1, 1, 1, 1, 1, 0, 1}, //0
+  {0, 1, 1, 0, 0, 0, 0, 1}, //1
+  {1, 1, 0, 1, 1, 0, 1, 1}, //2
+  {1, 1, 1, 1, 0, 0, 1, 1}, //3
+  {0, 1, 1, 0, 0, 1, 1, 1}, //4
+  {1, 0, 1, 1, 0, 1, 1, 1}, //5
+  {1, 0, 1, 1, 1, 1, 1, 1}, //6
+  {1, 1, 1, 0, 0, 0, 0, 1}, //7
+  {1, 1, 1, 1, 1, 1, 1, 1}, //8
+  {1, 1, 1, 1, 0, 1, 1, 1}  //9
+  };
+  
+  bright_off();
+  
+  for (int i = 0; i < 9; i++){
+    if (digitForNum[sum][i] == 1){
+      bright_element(i);
+    }
+  }
+  delay(5000);
+  bright_off();
+    
+}
+void bright_elements(int num){ // for 7_segment
+  switch(num){
+    case 0:
+      // a
+      select(8);
+      colorWipeScope(selector.Color(0,100,0), 0, 8, 8, 18);
+    case 1:
+      // b
+      select(2);
+      colorWipeScope(selector.Color(0,100,0), 0, 2, 0, 10);
+    case 2:
+      // c
+      select(2);
+      colorWipeScope(selector.Color(0,100,0), 0, 2, 10, 20);
+    case 3:
+      // d
+      select(4);
+      colorWipeScope(selector.Color(0,100,0), 0, 4, 8, 18);
+    case 4:
+      // e
+      select(1);
+      colorWipeScope(selector.Color(0,100,0), 0, 1, 10, 20);
+    case 5:
+      // f
+      select(1);
+      colorWipeScope(selector.Color(0,100,0), 0, 1, 0, 10);
+    case 6:
+      // g
+      select(6);
+      colorWipeScope(selector.Color(0,100,0), 0, 6, 8, 18);
   }
 }
 
